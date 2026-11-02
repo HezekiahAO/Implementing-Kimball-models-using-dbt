@@ -1,0 +1,11 @@
+version: 2
+
+sources:
+  - name: raw
+    # change to the schema where your source tables live
+    schema: raw
+    tables:
+      - name: transactions
+      - name: accounts
+      - name: orders
+      - name: customers
