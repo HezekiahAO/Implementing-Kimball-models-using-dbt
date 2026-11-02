@@ -1,0 +1,7 @@
+fintech_dwh:
+  target: dev
+  outputs:
+    dev:
+      type: duckdb
+      path: demo/demo.duckdb
+      threads: 1
