@@ -6,4 +6,4 @@ select
     upper(currency)      as account_currency,
     lower(status)        as account_status,
     created_at           as account_created_at
-from {{ source('raw', 'accounts') }}
+from {{ source('raw', 'accounts') }}   -- dependecy pointers dbt reads these pointers to draw the dependency graph (the DAG) and builds in the right order

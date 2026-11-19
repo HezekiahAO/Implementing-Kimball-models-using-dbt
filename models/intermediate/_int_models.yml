@@ -1,0 +1,99 @@
+version: 2
+
+# [YOUR COMMENT] Why do intermediate models carry primary_key constraints on top of unique/not_null tests?
+models:
+
+  - name: int_transactions_enriched
+    description: >
+      Transactions plus the owning customer and derived money-direction fields.
+      Incremental, merged on transaction_id, with a lookback window for late status changes.
+    config:
+      contract: {enforced: true}
+    columns:
+      - name: transaction_id
+        data_type: integer
+        constraints: [{type: primary_key}]
+        data_tests: [unique, not_null]
+      - name: account_id
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships: {to: ref('stg_accounts'), field: account_id}
+      - name: customer_id
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships: {to: ref('stg_customers'), field: customer_id}
+      - name: order_id
+        data_type: integer
+        data_tests:
+          - relationships: {to: ref('stg_orders'), field: order_id}
+      - {name: amount,                 data_type: "numeric(18,2)", data_tests: [not_null]}
+      - {name: currency,               data_type: text}
+      - {name: transaction_type,       data_type: text}
+      - {name: transaction_status,     data_type: text}
+      - {name: reference_code,         data_type: text}
+      - {name: transaction_created_at, data_type: timestamp, data_tests: [not_null]}
+      - {name: transaction_date,       data_type: date}
+      - {name: debited_at,             data_type: timestamp}
+      - {name: is_completed,           data_type: boolean}
+      - {name: is_failed,              data_type: boolean}
+      - {name: is_debited,             data_type: boolean}
+      - {name: has_order,              data_type: boolean}
+      - {name: minutes_to_debit,       data_type: "numeric(12,2)"}
+      - name: amount_direction
+        data_type: text
+        data_tests:
+          - accepted_values: {values: ['in', 'out']}
+      - {name: signed_amount,          data_type: "numeric(18,2)"}
+
+  - name: int_orders_enriched
+    description: >
+      Orders plus derived status and update fields.
+      Incremental, merged on order_id, driven by order_updated_at.
+    config:
+      contract: {enforced: true}
+    columns:
+      - name: order_id
+        data_type: integer
+        constraints: [{type: primary_key}]
+        data_tests: [unique, not_null]
+      - name: customer_id
+        data_type: integer
+        data_tests:
+          - not_null
+          - relationships: {to: ref('stg_customers'), field: customer_id}
+      - {name: order_total_amount,   data_type: "numeric(18,2)"}
+      - {name: order_currency,       data_type: text}
+      - {name: order_status,         data_type: text}
+      - {name: order_created_at,     data_type: timestamp}
+      - {name: order_updated_at,     data_type: timestamp, data_tests: [not_null]}
+      - {name: order_created_date,   data_type: date}
+      - {name: hours_to_last_update, data_type: "numeric(12,2)"}
+      - {name: is_order_open,        data_type: boolean}
+      - {name: has_been_updated,     data_type: boolean}
+
+  - name: int_customer_kyc
+    description: One row per customer with their latest KYC record attached. Rebuilt in full each run.
+    config:
+      materialized: table
+      contract: {enforced: true}
+    columns:
+      - name: customer_id
+        data_type: integer
+        constraints: [{type: primary_key}]
+        data_tests: [unique, not_null]
+      - {name: customer_name,           data_type: text}
+      - {name: customer_email,          data_type: text}
+      - {name: customer_email_domain,   data_type: text}
+      - {name: customer_country,        data_type: text}
+      - {name: kyc_status,              data_type: text}
+      - {name: customer_created_at,     data_type: timestamp}
+      - name: kyc_id
+        data_type: integer
+        data_tests:
+          - relationships: {to: ref('stg_kyc'), field: kyc_id}
+      - {name: kyc_tier_level,          data_type: text}
+      - {name: kyc_verification_status, data_type: text}
+      - {name: kyc_verified_at,         data_type: timestamp}
+      - {name: is_kyc_verified,         data_type: boolean}

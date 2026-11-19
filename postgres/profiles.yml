@@ -1,0 +1,14 @@
+# Postgres connection for dbt. Values come from environment variables, with local defaults.
+# Run dbt with:  dbt <command> --profiles-dir postgres
+fintech_dwh:
+  target: dev
+  outputs:
+    dev:
+      type: postgres
+      host: "{{ env_var('PGHOST', 'localhost') }}"
+      port: "{{ env_var('PGPORT', '5432') | as_number }}"
+      user: "{{ env_var('PGUSER', 'dbt_user') }}"
+      password: "{{ env_var('PGPASSWORD', 'dbt_pass') }}"
+      dbname: "{{ env_var('PGDATABASE', 'fintech') }}"
+      schema: analytics        # dbt builds staging + marts here; raw stays in the raw schema
+      threads: 4
